@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
 const express = require('express');
 const app = express();
-
+const path = require('path')
 
 dotenv.config({path:"./config.env"})
 require('../backend/db/conn')
@@ -12,7 +12,10 @@ const User = require('./model/userSchema')
 app.use(express.json());
 
 app.use(require('./router/auth'))
-
+app.use(express.static(path.join(__dirname,'./client/build')));
+app.get("*",function (req,res){
+  res.sendFile(path.join(__dirname,"./client/build/index.html"));
+})
 const PORT = process.env.PORT || 5000;
 app.post('/api/forgotpassword', async (req, res) => {
   try {
