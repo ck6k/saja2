@@ -1,25 +1,32 @@
-const dotenv = require('dotenv');
-const nodemailer = require('nodemailer');
-const mongoose = require('mongoose');
 const express = require('express');
+const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
+const path = require('path');
+
 const app = express();
-const path = require('path')
-
-dotenv.config({path:"./config.env"})
-require('../saja2/db/conn')
-const User = require('../saja2/model/userSchema')
-
-app.use(express.json());
-
-app.use(require('./router/auth'))
-app.use(express.static(path.join(__dirname,'./client/build')));
-app.get("*",function (req,res){
-  res.sendFile(path.join(__dirname,"./client/build/index.html"));
-})
 const PORT = process.env.PORT || 5000;
+
+// Connect to the MongoDB database
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
+};
+
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, './client/build')));
+
+// Routes
 app.post('/api/forgotpassword', async (req, res) => {
   try {
     const { email } = req.body;
+    const User = mongoose.model('User'); // Replace 'User' with your user schema model
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -62,7 +69,7 @@ const sendResetPasswordEmail = (email, resetLink) => {
     service: 'Gmail', // Update with your email service provider
     auth: {
       user: 'ckn6489@gmail.com', // Update with your email address
-     pass: 'yuhqozvdlfybtwzl',
+      pass: 'yuhqozvdlfybtwzl',
     },
   });
 
@@ -83,8 +90,9 @@ const sendResetPasswordEmail = (email, resetLink) => {
   });
 };
 
-
-
-app.listen(PORT, () => {
-  console.log('Server is running on port' ,PORT);
+// Connect to the database before listening
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log('Server is running on port', PORT);
+  });
 });
